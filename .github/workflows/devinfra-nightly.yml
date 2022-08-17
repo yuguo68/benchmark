@@ -20,7 +20,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          ref: v2.0
+          ref: 3.0
+      - name: Install conda
+        run: |
+          bash scripts/install_basics.sh
       - name: Create conda env
         run: |
           conda create -y -q --name "${CONDA_ENV_NAME}" python=${{ env.PYTHON_VER }}

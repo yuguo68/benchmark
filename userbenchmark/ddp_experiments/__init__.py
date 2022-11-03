@@ -319,7 +319,7 @@ def main():
         gpus_per_node=args.ngpus,
         # one task per GPU
         tasks_per_node=args.ngpus,
-        cpus_per_task=10,
+        cpus_per_task=12,
         nodes=args.nodes,
         timeout_min=args.timeout,
         # Below are cluster dependent parameters
@@ -347,8 +347,9 @@ def main():
         # 'torchbenchmark.models.hf_T5_large.Model',
         # 'torchbenchmark.models.timm_vision_transformer_large.Model',
         # # 'torchbenchmark.models.hf_GPT2.Model',
-        # 'torchbenchmark.models.hf_T5.Model',
+        'torchbenchmark.models.hf_T5.Model',
         'torchbenchmark.models.resnet50.Model',
+        # 'torchbenchmark.models.resnet152.Model',
     ]
 
     model_batch_size = {
@@ -359,16 +360,18 @@ def main():
         'torchbenchmark.models.timm_vision_transformer_large.Model': 16,
         'torchbenchmark.models.hf_GPT2.Model': 24,
         'torchbenchmark.models.hf_T5.Model': 12,
-        'torchbenchmark.models.resnet50.Model': 32,
+        'torchbenchmark.models.resnet50.Model': 128,
+        'torchbenchmark.models.resnet152.Model': 128,
     }
     model_args_configs = [
         [],  # no args = pure eager baseline
         # ["--torchdynamo", "eager"],  # runs dynamo without a backend
+        # ["--torchdynamo", "aot_eager"],  # runs dynamo without a backend
         # ["--torchdynamo", "aot_nvfuser"],
-        # ["--torchdynamo", "inductor"],
+        ["--torchdynamo", "inductor"],
     ]
     # node_list = [1, 2, 4, 8, 12, 16, 20, 24]
-    node_list = [1]
+    node_list = [2]
 
     def get_backend_name(model_args):
         if "--torchdynamo" in model_args:
@@ -391,7 +394,7 @@ def main():
                         if has_breaks:
                             copied_model_args.append("--optimize_dynamo_ddp")
                         if "inductor" in backend_name:
-                            copied_model_args.append("--torchinductor_cudagraph False")
+                            copied_model_args.extend(["--torchinductor_cudagraph", "False"])
                         batch_size = model_batch_size[model_name]
                         args_copy = copy.deepcopy(args)
                         args_copy.model = model_name
@@ -412,7 +415,7 @@ def main():
         gpus_per_node=args.ngpus,
         # one task per GPU
         tasks_per_node=args.ngpus,
-        cpus_per_task=10,
+        cpus_per_task=12,
         nodes=allocation_nodes,
         timeout_min=args.timeout,
         # Below are cluster dependent parameters

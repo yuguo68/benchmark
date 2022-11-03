@@ -8,8 +8,14 @@ from typing import List
 import torch._dynamo as torchdynamo
 from torchbenchmark.util.model import is_staged_train_test
 
-def parse_torchdynamo_args(model: 'torchbenchmark.util.model.BenchmarkModel', dynamo_args: List[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
+def parse_torchdynamo_args(
+    model: 'torchbenchmark.util.model.BenchmarkModel',
+    dynamo_args: List[str],
+    namespace: Optional[argparse.Namespace] = None
+) -> argparse.Namespace:
+    # pass in `namespace` arg to add to an existing argparse.Namespace object
+
+    parser = argparse.ArgumentParser(namespace=namespace)
     available_backends = torchdynamo.list_backends()
     parser.add_argument(
         "--torchdynamo", choices=available_backends, help="Specify torchdynamo backends"
@@ -35,14 +41,13 @@ def apply_torchdynamo_args(model: 'torchbenchmark.util.model.BenchmarkModel', ar
         dynamo_optimizer = torchdynamo.optimize(torchdynamo.optimizations.backends.fx2trt_compiler_fp16)
     else:
         dynamo_optimizer = torchdynamo.optimize(args.torchdynamo)
+    import torch._inductor.config
     # Setup torchinductor.config.triton.mm
     if args.tritonmm == "triton":
-        import torch._inductor as torchinductor
-        torchinductor.config.triton.mm = "triton"
+        torch._inductor.config.triton.mm = "triton"
         # currently can't pass correctness with use_bmm = True
         # torchinductor.config.triton.use_bmm = True
-    import torch._inductor as torchinductor
-    torchinductor.config.triton.cudagraphs = bool(args.torchinductor_cudagraph)
+    torch._inductor.config.triton.cudagraphs = bool(args.torchinductor_cudagraph)
 
     if model.test == "train":
         if is_staged_train_test(model):
